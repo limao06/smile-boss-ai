@@ -1,0 +1,84 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: smile-boss-ai
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  sql:
+    init:
+      mode: never
+      encoding: UTF-8
+
+smile:
+  jwt-secret: ${JWT_SECRET:}
+  upload-dir: ${UPLOAD_DIR:./uploads}
+  # 与参考实现使用同名环境变量。默认关闭，避免开发/测试误发真实群消息。
+  dingtalk:
+    enabled: ${DINGTALK_ENABLED:false}
+    webhook: ${DINGTALK_WEBHOOK:}
+    secret: ${DINGTALK_SECRET:}
+    keyword: ${DINGTALK_KEYWORD:招聘审核}
+    approval-page-url: ${DINGTALK_APPROVAL_PAGE_URL:http://localhost:5173}
+    connect-timeout-seconds: ${DINGTALK_CONNECT_TIMEOUT_SECONDS:5}
+    request-timeout-seconds: ${DINGTALK_REQUEST_TIMEOUT_SECONDS:15}
+    dispatch-interval-millis: ${DINGTALK_DISPATCH_INTERVAL_MILLIS:5000}
+    initial-delay-millis: ${DINGTALK_INITIAL_DELAY_MILLIS:3000}
+    batch-size: ${DINGTALK_BATCH_SIZE:20}
+    max-retries: ${DINGTALK_MAX_RETRIES:5}
+    retry-base-seconds: ${DINGTALK_RETRY_BASE_SECONDS:30}
+    retry-maximum-seconds: ${DINGTALK_RETRY_MAXIMUM_SECONDS:3600}
+    stale-lock-seconds: ${DINGTALK_STALE_LOCK_SECONDS:120}
+  text-to-sql:
+    source-code: RECRUITMENT_MAIN
+    semantic-model-code: RECRUITMENT_ANALYTICS
+    default-max-rows: ${TEXT_TO_SQL_DEFAULT_MAX_ROWS:200}
+    maximum-rows: ${TEXT_TO_SQL_MAXIMUM_ROWS:1000}
+    query-timeout-seconds: ${TEXT_TO_SQL_TIMEOUT_SECONDS:15}
+    approval-sla-minutes: ${TEXT_TO_SQL_APPROVAL_SLA_MINUTES:240}
+    allowed-tables:
+      - recruit_job
+      - talent_candidate
+      - talent_resume
+      - recruit_recommendation
+      - mock_interview_session
+      - ai_interview_invitation
+      - ai_interview_session
+      - candidate_activity_event
+  llm:
+    enabled: ${LLM_ENABLED:false}
+    chat-provider: ${NICE_LLM_CHAT_PROVIDER:claude}
+    embedding-provider: ${NICE_LLM_EMBEDDING_PROVIDER:qwen}
+    embedding-model: text-embedding-v3
+    providers:
+      claude:
+        enabled: true
+        api-key: ${CLAUDE_API_KEY:}
+        base-url: ${CLAUDE_BASE_URL:}
+        model: ${CLAUDE_MODEL:}
+      qwen:
+        enabled: true
+        api-key: ${DASHSCOPE_API_KEY:}
+        base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+        model: ${QWEN_MODEL:qwen-plus}
+      deepseek:
+        enabled: true
+        api-key: ${DEEPSEEK_API_KEY:}
+        base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com/v1}
+        model: ${DEEPSEEK_MODEL:deepseek-chat}
+      kimi:
+        enabled: true
+        api-key: ${MOONSHOT_API_KEY:}
+        base-url: ${MOONSHOT_BASE_URL:https://api.moonshot.cn/v1}
+        model: ${KIMI_MODEL:moonshot-v1-32k}
+  vector:
+    enabled: ${VECTOR_ENABLED:false}
+    base-url: ${QDRANT_URL:http://127.0.0.1:6333}
+    collection-resume: smile_boss_resume
+    collection-job: smile_boss_job
+    dimension: 1024

@@ -1,0 +1,37 @@
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local secrets and certificates
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Java / Node build outputs
+**/target/
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Runtime data and diagnostics
+uploads/
+*.log
+*.jfr
+hs_err_pid*
+*.mv.db
+*.trace.db
+
+# Optional local clones used by the research reports. The manifest is tracked,
+# but third-party repositories and their nested Git histories are never uploaded.
+research/source-code/
