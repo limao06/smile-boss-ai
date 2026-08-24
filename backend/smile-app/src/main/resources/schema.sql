@@ -51,6 +51,57 @@ CREATE TABLE IF NOT EXISTS talent_resume (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- AI 简历工作台：主简历只保存当前发布版本指针，所有内容变更都追加版本，便于审计和回滚。
+CREATE TABLE IF NOT EXISTS candidate_resume_workspace (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    candidate_id BIGINT NOT NULL UNIQUE,
+    resume_name VARCHAR(128) NOT NULL,
+    current_version_id BIGINT,
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS candidate_resume_version (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    workspace_id BIGINT NOT NULL,
+    version_no INT NOT NULL,
+    version_type VARCHAR(32) NOT NULL DEFAULT 'MASTER',
+    source_type VARCHAR(32) NOT NULL,
+    source_resume_id BIGINT,
+    target_job_id BIGINT,
+    content_json LONGTEXT NOT NULL,
+    quality_score INT NOT NULL DEFAULT 0,
+    change_summary VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(workspace_id, version_no)
+);
+
+CREATE TABLE IF NOT EXISTS resume_optimization_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    candidate_id BIGINT NOT NULL,
+    workspace_id BIGINT NOT NULL,
+    source_version_id BIGINT NOT NULL,
+    target_job_id BIGINT,
+    status VARCHAR(32) NOT NULL,
+    score_before INT NOT NULL DEFAULT 0,
+    score_after INT NOT NULL DEFAULT 0,
+    suggestions_json LONGTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    applied_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS resume_greeting_generation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    candidate_id BIGINT NOT NULL,
+    resume_version_id BIGINT NOT NULL,
+    job_id BIGINT NOT NULL,
+    tone VARCHAR(32) NOT NULL,
+    content_json LONGTEXT NOT NULL,
+    evidence_json LONGTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS recruit_recommendation (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     candidate_id BIGINT NOT NULL,

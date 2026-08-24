@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 /** 负责简历文件校验、文本提取和本地归档，不处理业务结构化。 */
 @Component
 public class ResumeFileExtractor {
+    private static final long MAXIMUM_FILE_BYTES = 20L * 1024L * 1024L;
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "txt", "md");
     private static final Pattern HORIZONTAL_WHITESPACE = Pattern.compile("[ \\t]+");
     private static final Pattern EXCESSIVE_NEWLINES = Pattern.compile("\\n{3,}");
@@ -44,6 +45,13 @@ public class ResumeFileExtractor {
 
         try {
             byte[] content = file.getBytes();
+            if (content.length > MAXIMUM_FILE_BYTES) {
+                throw new BizException("简历文件不能超过 20MB");
+            }
+            String detectedType = tika.detect(content, originalFilename);
+            if (!isCompatibleType(extension, detectedType)) {
+                throw new BizException("文件内容与扩展名不匹配，检测类型：" + detectedType);
+            }
             String text;
             try (ByteArrayInputStream inputStream = new ByteArrayInputStream(content)) {
                 text = tika.parseToString(inputStream);
@@ -87,6 +95,23 @@ public class ResumeFileExtractor {
             return "";
         }
         return filename.substring(separator + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean isCompatibleType(String extension, String detectedType) {
+        if (detectedType == null || detectedType.isBlank()) {
+            return false;
+        }
+        String mime = detectedType.toLowerCase(Locale.ROOT);
+        return switch (extension) {
+            case "pdf" -> "application/pdf".equals(mime);
+            case "doc" -> "application/msword".equals(mime)
+                    || "application/x-tika-msoffice".equals(mime);
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(mime)
+                    || "application/x-tika-ooxml".equals(mime)
+                    || "application/zip".equals(mime);
+            case "txt", "md" -> mime.startsWith("text/") || "application/octet-stream".equals(mime);
+            default -> false;
+        };
     }
 
     public record PreparedResume(

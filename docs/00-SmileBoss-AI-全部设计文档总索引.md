@@ -1,7 +1,7 @@
 # SmileBoss AI 全部设计文档总索引
 
 > 这是整个项目文档的唯一总入口。  
-> 更新基线：2026-08-14  
+> 更新基线：2026-08-24
 > 项目根目录：克隆后的仓库根目录  
 > 第三方源码：按 `research/REPOSITORY_MANIFEST.md` 自行克隆；`research/source-code` 不纳入本仓库
 
@@ -15,6 +15,7 @@ docs/
 ├── multi-agent-platform.md
 ├── text-to-sql-hitl.md
 ├── dingtalk-hitl-integration.md
+├── AI简历工作台-设计实现与本次更新说明.md
 └── API.md
 
 research/
@@ -81,6 +82,12 @@ research/
 
 包含：`dify-test` 配置对照、STAR 分析、加签算法、完整执行流程、Outbox 状态机、多实例抢占、失败退避、宕机恢复、消息脱敏、安全深链、数据库迁移、生产配置、排障和互动卡片/OA 升级边界。
 
+### 2.5 AI 简历工作台专项
+
+[AI 简历工作台：设计、实现与本次更新说明](AI简历工作台-设计实现与本次更新说明.md)
+
+包含：在线主简历、不可变版本、PDF/文本导入安全合并、导入预览确认、字段级优化、岗位定制简历、可打印导出、证据化招呼语、对象级权限、MySQL v4 迁移、测试结果和生产化边界。
+
 ## 3. 按角色阅读
 
 ### 产品经理/项目负责人
@@ -141,6 +148,7 @@ research/
 | 能力 | 当前实现 | 详细目标设计 | 开源参考 |
 |---|---|---|---|
 | 简历解析 | 主手册第 5 节 | 第 24.1–24.4 节 | Hiring Agent、RAGFlow |
+| AI 简历工作台 | AI 简历工作台专项 | 在线主简历、版本、导入、优化、岗位版本、招呼语 | Hiring Agent、SkillSyncer |
 | 完整度 | 第 5.2 节 | 第 21、24.1–24.3 节 | Hiring Agent、SkillSyncer |
 | 推荐 | 第 6 节 | 第 24.5–24.6 节 | Resume Screening、Skillspace |
 | 模拟面试 | 第 7.2 节 | 第 7.4、24、25 节 | AWS Interview Assistant |

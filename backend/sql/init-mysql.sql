@@ -19,9 +19,37 @@ CREATE TABLE IF NOT EXISTS talent_candidate (
  INDEX idx_candidate_phone(phone), INDEX idx_candidate_email(email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS talent_resume (
- id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, file_name VARCHAR(255), file_hash VARCHAR(64) UNIQUE,
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, file_name VARCHAR(255), file_hash VARCHAR(64),
  raw_text LONGTEXT, structured_json JSON, parse_status VARCHAR(32) NOT NULL, completeness_score INT DEFAULT 0,
- completeness_json JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_resume_candidate(candidate_id)
+ completeness_json JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_resume_candidate(candidate_id),
+ UNIQUE KEY uk_resume_candidate_hash(candidate_id,file_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS candidate_resume_workspace (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, resume_name VARCHAR(128) NOT NULL,
+ current_version_id BIGINT, status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ UNIQUE KEY uk_resume_workspace_candidate(candidate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS candidate_resume_version (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, workspace_id BIGINT NOT NULL, version_no INT NOT NULL,
+ version_type VARCHAR(32) NOT NULL DEFAULT 'MASTER', source_type VARCHAR(32) NOT NULL,
+ source_resume_id BIGINT, target_job_id BIGINT, content_json JSON NOT NULL, quality_score INT NOT NULL DEFAULT 0,
+ change_summary VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE KEY uk_resume_workspace_version(workspace_id,version_no),
+ INDEX idx_resume_version_target_job(target_job_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS resume_optimization_task (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, workspace_id BIGINT NOT NULL,
+ source_version_id BIGINT NOT NULL, target_job_id BIGINT, status VARCHAR(32) NOT NULL,
+ score_before INT NOT NULL DEFAULT 0, score_after INT NOT NULL DEFAULT 0, suggestions_json JSON NOT NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, applied_at TIMESTAMP NULL,
+ INDEX idx_resume_optimization_candidate(candidate_id,created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS resume_greeting_generation (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, resume_version_id BIGINT NOT NULL,
+ job_id BIGINT NOT NULL, tone VARCHAR(32) NOT NULL, content_json JSON NOT NULL, evidence_json JSON NOT NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ INDEX idx_resume_greeting_candidate(candidate_id,created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS recruit_recommendation (
  id BIGINT PRIMARY KEY AUTO_INCREMENT, candidate_id BIGINT NOT NULL, job_id BIGINT NOT NULL, score INT NOT NULL,

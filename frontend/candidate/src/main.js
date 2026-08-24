@@ -17,6 +17,7 @@ import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/progress/style/css'
 import 'element-plus/es/components/tag/style/css'
 import './style.css'
+import './workbench.css'
 import App from './App.vue'
 
 const application = createApp(App)

@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,24 +25,27 @@ public class ResumeService {
     private final ObjectMapper objectMapper;
     private final ResumeFileExtractor fileExtractor;
     private final ResumeAnalyzer resumeAnalyzer;
+    private final ResumeWorkspaceService workspaceService;
     private final TransactionTemplate transactionTemplate;
 
     public ResumeService(JdbcTemplate jdbcTemplate,
                          ObjectMapper objectMapper,
                          ResumeFileExtractor fileExtractor,
                          ResumeAnalyzer resumeAnalyzer,
+                         ResumeWorkspaceService workspaceService,
                          TransactionTemplate transactionTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.fileExtractor = fileExtractor;
         this.resumeAnalyzer = resumeAnalyzer;
+        this.workspaceService = workspaceService;
         this.transactionTemplate = transactionTemplate;
     }
 
     public Map<String, Object> upload(long candidateId, MultipartFile file) {
         Map<String, Object> candidate = findCandidate(candidateId);
         ResumeFileExtractor.PreparedResume resume = fileExtractor.prepare(file);
-        rejectDuplicate(resume.hash());
+        rejectDuplicate(candidateId, resume.hash());
         ResumeAnalyzer.AnalysisResult analysis = resumeAnalyzer.analyze(candidate, resume.text());
         fileExtractor.archive(resume);
         return persist(candidateId, resume.originalFilename(), resume.hash(), resume.text(), analysis);
@@ -54,7 +58,7 @@ public class ResumeService {
         Map<String, Object> candidate = findCandidate(candidateId);
         String cleanedText = ResumeFileExtractor.clean(text);
         String hash = HashUtils.sha256(cleanedText);
-        rejectDuplicate(hash);
+        rejectDuplicate(candidateId, hash);
         ResumeAnalyzer.AnalysisResult analysis = resumeAnalyzer.analyze(candidate, cleanedText);
         return persist(candidateId, "在线简历.txt", hash, cleanedText, analysis);
     }
@@ -77,11 +81,15 @@ public class ResumeService {
         Map<String, Object> result = transactionTemplate.execute(status -> {
             long resumeId = insertResume(candidateId, filename, hash, text, analysis);
             updateCandidateProfile(candidateId, analysis.structured());
-            return Map.of(
-                    "resumeId", resumeId,
-                    "status", "SUCCESS",
-                    "structured", analysis.structured(),
-                    "completeness", analysis.completeness());
+            Map<String, Object> workspaceImport = workspaceService.importParsedResume(
+                    candidateId, resumeId, filename, text, analysis.structured());
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("resumeId", resumeId);
+            response.put("status", "SUCCESS");
+            response.put("structured", analysis.structured());
+            response.put("completeness", analysis.completeness());
+            response.put("workspaceImport", workspaceImport);
+            return response;
         });
         if (result == null) {
             throw new BizException("简历保存事务未返回结果");
@@ -123,6 +131,7 @@ public class ResumeService {
     private Map<String, Object> findCandidate(long candidateId) {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList("""
                 SELECT id, name, city, years_of_experience
+                       , phone, email, desired_position, profile_summary
                 FROM talent_candidate
                 WHERE id=?
                 """, candidateId);
@@ -132,9 +141,9 @@ public class ResumeService {
         return rows.get(0);
     }
 
-    private void rejectDuplicate(String hash) {
+    private void rejectDuplicate(long candidateId, String hash) {
         List<Map<String, Object>> duplicates = jdbcTemplate.queryForList(
-                "SELECT id FROM talent_resume WHERE file_hash=?", hash);
+                "SELECT id FROM talent_resume WHERE candidate_id=? AND file_hash=?", candidateId, hash);
         if (!duplicates.isEmpty()) {
             throw new BizException("这份简历已经上传过，简历编号：" + duplicates.get(0).get("id"));
         }
